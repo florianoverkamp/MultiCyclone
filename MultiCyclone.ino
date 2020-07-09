@@ -91,7 +91,7 @@ LiquidCrystal lcd(LCD_RS, LCD_EN, LCD_D4, LCD_D5, LCD_D6, LCD_D7);
 #define RUNNING         1
 #define EXPLODE         2
 int GAME_STATUS = SNOOZING;
-#define DEFAULT_GAME_SPEED 350  // Any range between 200 and 10 seems fair enough
+#define DEFAULT_GAME_SPEED 250  // Any range between 200 and 10 seems fair enough
 int GAME_SPEED = DEFAULT_GAME_SPEED;
 unsigned long game_delay;
 int BALL_PIXEL;
