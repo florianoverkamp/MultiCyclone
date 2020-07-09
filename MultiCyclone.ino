@@ -6,6 +6,8 @@
  *  Basic game implementation based on https://www.instructables.com/id/Cyclone-LED-Arcade-Game/
  *  Possible extension idea to change directions as per https://www.youtube.com/watch?v=LWt2IgzJpRQ
  *  
+ *  Also potential todo's:
+ *  Cleaner printing with LCD and buffer strings https://www.baldengineer.com/arduino-lcd-display-tips.html
  */
 #include "MultiCyclone.h"
 #include "buzzertones.h"
@@ -59,6 +61,7 @@ button_t green_button;
 button_t blue_button;
 button_t yellow_button;
 #define DEBOUNCE        80     // milliseconds to wait for debouncing
+int active_players = 0;
 
 /*#define BUTTON_INACTIVE 0
 #define BUTTON_HOT      1
@@ -115,24 +118,32 @@ void setup() {
   
   red_button.name = "Red";
   red_button.pixel_pos = RED_PIXEL;
-  red_button.pos_name_x = 9;
+  red_button.pos_name_x = 1;
   red_button.pos_name_y = 2;
+  red_button.pos_score_x = 6;
+  red_button.pos_score_y = 2;
 
   green_button.name = "Green";
   green_button.pixel_pos = GREEN_PIXEL;
-  green_button.pos_name_x = 14;
+  green_button.pos_name_x = 10;
   green_button.pos_name_y = 2;
+  green_button.pos_score_x = 17;
+  green_button.pos_score_y = 2;
 
   blue_button.name = "Blue";
   blue_button.pixel_pos = BLUE_PIXEL;
   blue_button.pos_name_x = 0;
   blue_button.pos_name_y = 3;
-
+  blue_button.pos_score_x = 6;
+  blue_button.pos_score_y = 3;
+  
   yellow_button.name = "Yellow";
   yellow_button.pixel_pos = YELLOW_PIXEL;
-  yellow_button.pos_name_x = 5;
+  yellow_button.pos_name_x = 9;
   yellow_button.pos_name_y = 3;
-
+  yellow_button.pos_score_x = 17;
+  yellow_button.pos_score_y = 3;
+  
   // initialize WS2812 LED pixels
   FastLED.addLeds<NEOPIXEL, PIXEL_PIN>(cyclone, NUMPIXELS);
   FastLED.setBrightness(1);
@@ -168,8 +179,19 @@ void button_read(uint8_t state, button_t *button) {
     DEBUGLN(" joined the game"); 
     joined();
     button->playing = true;
+    active_players++;       // make sure to reset this once the game routine resets
+    // Update overall banner
+    lcd.setCursor(0, 1);
+    lcd.print("     ");
+    lcd.print(active_players);
+    lcd.print(" player");
+    if(active_players > 1) lcd.print("s");
+    // Add player to scoreboard
     lcd.setCursor(button->pos_name_x, button->pos_name_y);
     lcd.print(button->name);
+    lcd.print(":");
+    lcd.setCursor(button->pos_score_x, button->pos_score_y);
+    lcd.print("-");
     if(GAME_STATUS == RUNNING) return;
   }
 
@@ -181,7 +203,11 @@ void button_read(uint8_t state, button_t *button) {
                   if(BALL_PIXEL == button->pixel_pos) {
                     // Player wins the round!
                     DEBUG(button->name);
-                    DEBUGLN(" wins the round!");
+                    DEBUG(" wins the round: score = ");
+                    button->score++;
+                    DEBUGLN(String(button->score));
+                    lcd.setCursor(button->pos_score_x, button->pos_score_y);
+                    lcd.print(String(button->score));
                     hit();
                     // SPEED UP!!!
                     if(GAME_SPEED > 50) {
@@ -258,8 +284,6 @@ void new_game() {
   DEBUGLN("New game starting"); 
 
   analogWrite(LCD_BACKLIGHT, 150); // 0-255; higher means stronger backlight
-  lcd.setCursor(0, 1);
-  lcd.print("Game commencing...");
 
   // Reset new game defaults
   GAME_STATUS = RUNNING;
@@ -267,10 +291,6 @@ void new_game() {
   
   // Start the ball at random
   BALL_PIXEL = int(random(0, NUMPIXELS-1));
-
-  // Game setup display (individual players are displayed elsewhere)
-  lcd.setCursor(0, 2);
-  lcd.print("Players: ");
   
   // Maybe play some sounds and visuals to acknowledge the new game
 
