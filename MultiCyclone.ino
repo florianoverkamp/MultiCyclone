@@ -7,6 +7,7 @@
  *  Possible extension idea to change directions as per https://www.youtube.com/watch?v=LWt2IgzJpRQ
  *  
  */
+#include "MultiCyclone.h"
 #include "buzzertones.h"
 #include <FastLED.h>
 #include <LiquidCrystal.h>
@@ -29,22 +30,30 @@
 
 
 /* Serial debug (comment out to disable) */
-//#define SERIAL
+#define SERIALDEBUG
+bool serialinitialised = false;
+
+void DEBUG(const String& line) {
+#ifdef SERIALDEBUG
+  if(!serialinitialised){
+    Serial.begin(115200);
+    serialinitialised = true;
+  }
+  Serial.print(line);
+#endif
+}
+
+void DEBUGLN(const String& line) {
+#ifdef SERIALDEBUG
+  if(!serialinitialised){
+    Serial.begin(115200);
+    serialinitialised = true;
+  }
+  Serial.println(line);
+#endif
+}
 
 /* Button definitions */
-struct button_t
-{
-  byte state = 0;
-  bool playing = false;
-  unsigned long debounce;
-  String name;
-  int score = 0;
-  int pixel_pos;
-  int pos_name_x;
-  int pos_name_y;
-  int pos_score_x;
-  int pos_score_y;
-};
 button_t red_button;
 button_t green_button;
 button_t blue_button;
@@ -91,17 +100,8 @@ void setup() {
 
   // Show banner
   lcd.begin(20, 4);
-//  lcd.print("01234567890123456789");  
   lcd.print("    MultiCyclone    ");
-  
-#ifdef SERIAL 
-  Serial.begin(115200);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
-  // Banner
-  Serial.println("MultiCyclone - Booting");   // send an initial string
-#endif
+  DEBUGLN("MultiCyclone - Booting");   // send an initial string
 
   pinMode(BUTTON_RED, INPUT_PULLUP);
   pinMode(BUTTON_GREEN, INPUT_PULLUP);
@@ -164,9 +164,7 @@ void button_read(uint8_t state, button_t *button) {
   }
 
   if(button->playing == false) {
-#ifdef SERIAL
-  Serial.println("Joining the game"); 
-#endif
+    DEBUGLN("Joining the game"); 
     joined();      
     button->playing = true;
     lcd.setCursor(button->pos_name_x, button->pos_name_y);
@@ -180,26 +178,22 @@ void button_read(uint8_t state, button_t *button) {
                   new_game();
                   break;
     case RUNNING: 
-        if(BALL_PIXEL == button->pixel_pos) {
-          // Player wins the round!
-#ifdef SERIAL
-  Serial.println("Player wins the round!"); 
-#endif
-          hit();
-          // SPEED UP!!!
-          if(GAME_SPEED > 50) {
-            GAME_SPEED = GAME_SPEED - 25;
-#ifdef SERIAL
-  Serial.print("Speed timer decreased to "); 
-  Serial.println(GAME_SPEED); 
-#endif
-          }
-        } else {
-#ifdef SERIAL
-  Serial.println("Player missed!"); 
-#endif
-          missed();      
-        }
+                  if(BALL_PIXEL == button->pixel_pos) {
+                    // Player wins the round!
+                    DEBUG(button->name);
+                    DEBUGLN(" wins the round!");
+                    hit();
+                    // SPEED UP!!!
+                    if(GAME_SPEED > 50) {
+                      GAME_SPEED = GAME_SPEED - 25;
+                      DEBUG("Speed timer decreased to "); 
+                      DEBUGLN(String(GAME_SPEED)); 
+                    }
+                  } else {
+                    DEBUG(button->name);
+                    DEBUGLN(" missed!"); 
+                    missed();      
+                  }
                   break;
   }
   
@@ -261,9 +255,7 @@ void hit() {
  * Start a new game
  */
 void new_game() {
-#ifdef SERIAL
-  Serial.println("New game starting"); 
-#endif
+  DEBUGLN("New game starting"); 
 
   analogWrite(LCD_BACKLIGHT, 150); // 0-255; higher means stronger backlight
   lcd.setCursor(0, 1);
@@ -350,10 +342,7 @@ void loop() {
 
     case EXPLODE:
       // Sound and visuals
-#ifdef SERIAL
-  Serial.println("Exploded"); 
-#endif
-// Upon finishing the game, we need to reset the playing var to false;
+      // Upon finishing the game, we need to reset the playing var to false;
         GAME_STATUS = RUNNING;
 
 
