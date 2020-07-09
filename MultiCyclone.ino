@@ -17,13 +17,16 @@
 #define BUTTON_GREEN    4
 #define BUTTON_BLUE     5
 #define BUTTON_YELLOW   6
-#define LCD_D4          7
-#define LCD_D5          8
-#define LCD_D6          9
-#define LCD_D7          10
-#define LCD_EN          11
-#define LCD_RS          12
-#define BUZZER          13
+#define LCD_CONTRAST    9
+#define LCD_BACKLIGHT   10
+#define BUZZER          12
+#define LCD_D4          A0
+#define LCD_D5          A1
+#define LCD_D6          A2
+#define LCD_D7          A3
+#define LCD_EN          A4
+#define LCD_RS          A5
+
 
 /* Serial debug (comment out to disable) */
 //#define SERIAL
@@ -105,7 +108,11 @@ void setup() {
   pinMode(BUTTON_BLUE, INPUT_PULLUP);
   pinMode(BUTTON_YELLOW, INPUT_PULLUP);
   pinMode(BUZZER, OUTPUT);
-
+  pinMode(LCD_CONTRAST, OUTPUT);
+  pinMode(LCD_BACKLIGHT, OUTPUT);
+  analogWrite(LCD_CONTRAST, 50); // 0-255; lower value most likely, nearer to 0 means high visibility of the background matrix (via an RC filter)
+  analogWrite(LCD_BACKLIGHT, 25); // 0-255; higher means stronger backlight
+  
   red_button.name = "Red";
   red_button.pixel_pos = RED_PIXEL;
   red_button.pos_name_x = 9;
@@ -258,9 +265,10 @@ void new_game() {
   Serial.println("New game starting"); 
 #endif
 
+  analogWrite(LCD_BACKLIGHT, 150); // 0-255; higher means stronger backlight
   lcd.setCursor(0, 1);
   lcd.print("Game commencing...");
-  
+
   // Reset new game defaults
   GAME_STATUS = RUNNING;
   GAME_SPEED = DEFAULT_GAME_SPEED;
