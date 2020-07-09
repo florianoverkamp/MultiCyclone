@@ -164,13 +164,13 @@ void button_read(uint8_t state, button_t *button) {
   }
 
   if(button->playing == false) {
-    DEBUGLN("Joining the game"); 
-    joined();      
+    DEBUG(button->name);
+    DEBUGLN(" joined the game"); 
+    joined();
     button->playing = true;
     lcd.setCursor(button->pos_name_x, button->pos_name_y);
     lcd.print(button->name);
-
-    // @@@TODO@@@ Play a little sound and return, or the second/third/fourth player get a miss right away
+    if(GAME_STATUS == RUNNING) return;
   }
 
   switch(GAME_STATUS){
