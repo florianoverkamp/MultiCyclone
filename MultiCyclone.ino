@@ -8,7 +8,7 @@
  *  Cleaner printing with LCD and buffer strings https://www.baldengineer.com/arduino-lcd-display-tips.html
  *  
  *  Improvements: 
- *  - Player timeout
+ *  - Player timeout when missing
  *  - Toon ronde teller en/of snelheid
  *  - 5 rondes niet geraakt = einde spel
  *  - Possible extension idea to change directions as per https://www.youtube.com/watch?v=LWt2IgzJpRQ
