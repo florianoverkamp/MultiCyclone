@@ -2,12 +2,20 @@
  *  Multicyclone - a DIY Arduino Multiplayer Cyclone game 
  *  by F. Overkamp 2020
  *  
- *  
  *  Basic game implementation based on https://www.instructables.com/id/Cyclone-LED-Arcade-Game/
- *  Possible extension idea to change directions as per https://www.youtube.com/watch?v=LWt2IgzJpRQ
  *  
  *  Also potential todo's:
  *  Cleaner printing with LCD and buffer strings https://www.baldengineer.com/arduino-lcd-display-tips.html
+ *  
+ *  Improvements: 
+ *  - Player timeout
+ *  - Toon ronde teller en/of snelheid
+ *  - 5 rondes niet geraakt = einde spel
+ *  - Possible extension idea to change directions as per https://www.youtube.com/watch?v=LWt2IgzJpRQ
+ *  - Plek van de stip randomisen
+ *  - Aan uit fysiek?
+ *  - Locatie randomisation na iedere win wenselijk of niet?
+ *  
  */
 #include "MultiCyclone.h"
 #include "buzzertones.h"
@@ -60,7 +68,7 @@ button_t red_button;
 button_t green_button;
 button_t blue_button;
 button_t yellow_button;
-#define DEBOUNCE        80     // milliseconds to wait for debouncing
+#define DEBOUNCE        20     // milliseconds to wait for debouncing
 int active_players = 0;
 
 /*#define BUTTON_INACTIVE 0
@@ -69,11 +77,11 @@ int active_players = 0;
 
 /* LED definitions */
 #define NUMPIXELS       60
-#define BRIGHTNESS      10     // 0-64
-#define RED_PIXEL       0     // @@@TODO@@@ Check offset to match once pixels and buttons are fixed
-#define GREEN_PIXEL     RED_PIXEL+15
-#define BLUE_PIXEL      RED_PIXEL+30
-#define YELLOW_PIXEL    RED_PIXEL+45
+#define BRIGHTNESS      20     // 0-64
+#define BLUE_PIXEL       5              // This offset is needed depending on how you assemble the ring and the associated buttons
+#define RED_PIXEL       20              // This offset is needed depending on how you assemble the ring and the associated buttons
+#define GREEN_PIXEL     35              // This offset is needed depending on how you assemble the ring and the associated buttons
+#define YELLOW_PIXEL    50              // This offset is needed depending on how you assemble the ring and the associated buttons
 CRGB cyclone[NUMPIXELS];
 
 /* Buzzer definitions */
@@ -95,6 +103,8 @@ int GAME_STATUS = SNOOZING;
 int GAME_SPEED = DEFAULT_GAME_SPEED;
 unsigned long game_delay;
 int BALL_PIXEL;
+int leapcount = 0;
+int wonleap = 0;
 
 /*
  * Initial boot sequence
@@ -210,11 +220,18 @@ void button_read(uint8_t state, button_t *button) {
                     lcd.print(String(button->score));
                     hit();
                     // SPEED UP!!!
-                    if(GAME_SPEED > 50) {
+                    if(GAME_SPEED > 100) {
                       GAME_SPEED = GAME_SPEED - 25;
-                      DEBUG("Speed timer decreased to "); 
-                      DEBUGLN(String(GAME_SPEED)); 
+                    } else if(GAME_SPEED > 20) {
+                      GAME_SPEED = GAME_SPEED - 10;
+                    } else if(GAME_SPEED > 5) {
+                      GAME_SPEED = GAME_SPEED - 5;
                     }
+                    DEBUG("New speed is "); 
+                    DEBUGLN(String(GAME_SPEED)); 
+                    wonleap = leapcount;
+                    // Restart the ball at random
+//                    BALL_PIXEL = int(random(0, NUMPIXELS-1)); // User feedback: sounds nice in theory, sucks in practice
                   } else {
                     DEBUG(button->name);
                     DEBUGLN(" missed!"); 
@@ -283,11 +300,18 @@ void hit() {
 void new_game() {
   DEBUGLN("New game starting"); 
 
-  analogWrite(LCD_BACKLIGHT, 150); // 0-255; higher means stronger backlight
+  analogWrite(LCD_BACKLIGHT, 250); // 0-255; higher means stronger backlight
 
   // Reset new game defaults
   GAME_STATUS = RUNNING;
   GAME_SPEED = DEFAULT_GAME_SPEED;
+  leapcount = 1;
+  wonleap = 0;
+  active_players = 0;
+  red_button.score = 0;
+  green_button.score = 0;
+  blue_button.score = 0;
+  yellow_button.score = 0;
   
   // Start the ball at random
   BALL_PIXEL = int(random(0, NUMPIXELS-1));
@@ -314,6 +338,7 @@ void set_board() {
 }
 
 void have_winner() {
+  wonleap = leapcount;
   // Wipe the board
   FastLED.clear();
 /*  for (int i = 0; i < NUMPIXELS; i++) {
@@ -325,6 +350,128 @@ void have_winner() {
 
 int proximity(int ball, int button) {
   return 0;
+}
+
+void game_end() {
+  // highest score
+  int highscore = 0;
+  if (red_button.score > highscore) highscore = red_button.score;
+  if (blue_button.score > highscore) highscore = blue_button.score;
+  if (green_button.score > highscore) highscore = green_button.score;
+  if (yellow_button.score > highscore) highscore = yellow_button.score;
+
+  unsigned long time = millis();
+  int randomSound=1000;
+
+  lcd.setCursor(0, 1);
+  lcd.print("   Round finished   ");
+  lcd.setCursor(0, 2);
+  lcd.print("                    ");
+  lcd.setCursor(0, 3);
+  lcd.print("                    ");
+
+  for (int j = 0; j < 5; j++) {
+    
+    if (red_button.score == highscore) {
+      while(millis() - time <= 250)  {  
+        randomSound--;
+        tone(BUZZER, random(randomSound, 1000));   // change the parameters of random() for different sound
+      }
+      noTone(BUZZER);
+
+      // Add player to scoreboard
+      lcd.setCursor(red_button.pos_name_x, red_button.pos_name_y);
+      lcd.print(red_button.name);
+      lcd.print(":");
+      lcd.setCursor(red_button.pos_score_x, red_button.pos_score_y);
+      lcd.print(String(red_button.score));
+
+      for (int i = 0; i < NUMPIXELS; i++) {
+        cyclone[i] = CRGB::Red;
+        FastLED.show();
+        delay(5);
+      }
+    }
+
+    if (blue_button.score == highscore) {
+      while(millis() - time <= 250)  {  
+        randomSound--;
+        tone(BUZZER, random(randomSound, 1000));   // change the parameters of random() for different sound
+      }
+      noTone(BUZZER);
+      
+      // Add player to scoreboard
+      lcd.setCursor(blue_button.pos_name_x, blue_button.pos_name_y);
+      lcd.print(blue_button.name);
+      lcd.print(":");
+      lcd.setCursor(blue_button.pos_score_x, blue_button.pos_score_y);
+      lcd.print(String(blue_button.score));
+ 
+      for (int i = 0; i < NUMPIXELS; i++) {
+        cyclone[i] = CRGB::DarkBlue;
+        FastLED.show();
+        delay(5);
+      }
+    }
+  
+    if (green_button.score == highscore) {
+      while(millis() - time <= 250)  {  
+        randomSound--;
+        tone(BUZZER, random(randomSound, 1000));   // change the parameters of random() for different sound
+      }
+      noTone(BUZZER);
+      
+      // Add player to scoreboard
+      lcd.setCursor(green_button.pos_name_x, green_button.pos_name_y);
+      lcd.print(green_button.name);
+      lcd.print(":");
+      lcd.setCursor(green_button.pos_score_x, green_button.pos_score_y);
+      lcd.print(String(green_button.score));
+  
+      for (int i = 0; i < NUMPIXELS; i++) {
+        cyclone[i] = CRGB::Green;
+        FastLED.show();
+        delay(5);
+      }
+    }
+  
+    if (yellow_button.score == highscore) {
+      while(millis() - time <= 250)  {  
+        randomSound--;
+        tone(BUZZER, random(randomSound, 1000));   // change the parameters of random() for different sound
+      }
+      noTone(BUZZER);
+     
+      // Add player to scoreboard
+      lcd.setCursor(yellow_button.pos_name_x, yellow_button.pos_name_y);
+      lcd.print(yellow_button.name);
+      lcd.print(":");
+      lcd.setCursor(yellow_button.pos_score_x, yellow_button.pos_score_y);
+      lcd.print(String(yellow_button.score));
+ 
+      for (int i = 0; i < NUMPIXELS; i++) {
+        cyclone[i] = CRGB::Yellow;
+        FastLED.show();
+        delay(5);
+      }
+    }
+  }
+  
+  lcd.setCursor(0, 1);
+  lcd.print("                    ");
+  lcd.setCursor(0, 2);
+  lcd.print("                    ");
+  lcd.setCursor(0, 3);
+  lcd.print("                    ");
+
+  FastLED.setBrightness(1);
+  GAME_SPEED = DEFAULT_GAME_SPEED;
+  GAME_STATUS = SNOOZING;
+  red_button.playing = false;
+  blue_button.playing = false;
+  green_button.playing = false;
+  yellow_button.playing = false;
+  
 }
 
 /* 
@@ -355,12 +502,16 @@ void loop() {
       if(millis() - game_delay > GAME_SPEED) {
         game_delay = millis();
         BALL_PIXEL++;
-        if(BALL_PIXEL >= NUMPIXELS) BALL_PIXEL = 0;
+        if(BALL_PIXEL >= NUMPIXELS) {
+          leapcount++;
+          BALL_PIXEL = 0;
+        }
+        if((leapcount - wonleap) > 5) game_end();
         set_board();
       }
       break;
 
-    case EXPLODE:
+    case EXPLODE:     // defunct
       // Sound and visuals
       // Upon finishing the game, we need to reset the playing var to false;
         GAME_STATUS = RUNNING;
@@ -377,28 +528,5 @@ void loop() {
       break;
       
   }
-  
-  // Check for button activity
-/*  if (digitalRead(BUTTON1) == LOW && button1_state == 0) {
-    // check if enough time has passed to consider it a switch press
-    if ((millis() - debouncetimer) > DEBOUNCE) {
-      button1_state=1;
-      if(state == STATE_AVAILABLE) {
-        setBUSY();
-      } else if(state == STATE_BUSY) {
-        setMEETING();
-      } else {
-        setAVAILABLE();
-      }
-      debouncetimer = millis();
-    }
-  } else {
-    if (button1_state == 1 && digitalRead(BUTTON1) == HIGH){
-      button1_state=0;
-    }
-  }
-*/
-
-
 
 }
