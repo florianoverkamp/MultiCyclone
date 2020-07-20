@@ -1,5 +1,5 @@
 /* 
- *  Multicyclone - a DIY Arduino Multiplayer Cyclone game 
+ *  Multicyclone - a DIY Arduino Multiplayer Cyclotron game 
  *  by F. Overkamp 2020
  *  
  *  Basic game implementation based on https://www.instructables.com/id/Cyclone-LED-Arcade-Game/
