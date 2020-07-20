@@ -15,6 +15,7 @@
  *  - Plek van de stip randomisen
  *  - Aan uit fysiek?
  *  - Locatie randomisation na iedere win wenselijk of niet?
+ *  - langere zichtbaarheid van final score
  *  
  */
 #include "MultiCyclone.h"
