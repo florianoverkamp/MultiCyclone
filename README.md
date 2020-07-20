@@ -1,5 +1,5 @@
 # MultiCyclone
-## An Arduino implementation of the Cyclotron arcade game for 1 to 4 player.
+## An Arduino implementation of the Cyclotron arcade game for 1 to 4 players.
 
 ### Objective of the game
 You are scientists analysing particles sent across an acceleration chamber. To do this each scientist has a particle gun. To create a collision between your particle and the particle in the acceleration chamber you must hit the launch button at the exact moment the particle is in front of your particle gun. Every succesfull collision accellerates the particle. If the particle travels the chamber five times without a succesfull collision the particle is lost and the game ends. The scientist with the most succesfull collisions wins the game.
