@@ -302,7 +302,6 @@ void new_game() {
   GAME_SPEED = DEFAULT_GAME_SPEED;
   leapcount = 1;
   wonleap = 0;
-  active_players = 0;
   red_button.score = 0;
   green_button.score = 0;
   blue_button.score = 0;
@@ -466,7 +465,7 @@ void game_end() {
   blue_button.playing = false;
   green_button.playing = false;
   yellow_button.playing = false;
-  
+  active_players = 0;
 }
 
 /* 
