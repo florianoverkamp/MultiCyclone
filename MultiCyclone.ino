@@ -7,15 +7,11 @@
  *  Also potential todo's:
  *  Cleaner printing with LCD and buffer strings https://www.baldengineer.com/arduino-lcd-display-tips.html
  *  
- *  Improvements: 
+ *  Improvements to consider: 
  *  - Player timeout when missing
- *  - Toon ronde teller en/of snelheid
- *  - 5 rondes niet geraakt = einde spel
+ *  - Round or speed visible on lcd
  *  - Possible extension idea to change directions as per https://www.youtube.com/watch?v=LWt2IgzJpRQ
- *  - Plek van de stip randomisen
- *  - Aan uit fysiek?
- *  - Locatie randomisation na iedere win wenselijk of niet?
- *  - langere zichtbaarheid van final score
+ *  - Make final score visible for some period
  *  
  */
 #include "MultiCyclone.h"
@@ -231,8 +227,6 @@ void button_read(uint8_t state, button_t *button) {
                     DEBUG("New speed is "); 
                     DEBUGLN(String(GAME_SPEED)); 
                     wonleap = leapcount;
-                    // Restart the ball at random
-//                    BALL_PIXEL = int(random(0, NUMPIXELS-1)); // User feedback: sounds nice in theory, sucks in practice
                   } else {
                     DEBUG(button->name);
                     DEBUGLN(" missed!"); 
