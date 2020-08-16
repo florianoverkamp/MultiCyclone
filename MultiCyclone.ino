@@ -331,17 +331,6 @@ void set_board() {
   FastLED.show();
 }
 
-void have_winner() {
-  wonleap = leapcount;
-  // Wipe the board
-  FastLED.clear();
-/*  for (int i = 0; i < NUMPIXELS; i++) {
-    cyclone[i] = CRGB::White;
-  }*/
-  // Make some sounds @@@TODO@@@
-  delay(250);
-}
-
 int proximity(int ball, int button) {
   return 0;
 }
